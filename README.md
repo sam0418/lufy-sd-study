@@ -28,8 +28,10 @@ compatibility fix) at commit `86af756`, unmodified. Everything else is new:
   `sd_labels.json` keyed by sha256 of the memory text (as in LUFY-EVO E035).
   Runs after each session in **both** conditions (control: logged only), so reply
   latency is identical and SD retention can be compared.
-  **The detector prompt is provisional** (Dou et al. categories from
-  `evaluation/dou_signal.py`); replace with E033's.
+  The detector is E033 v2, ported verbatim (prompt checked character for
+  character): `gpt-4o-2024-08-06`, user words only, 20 per call, Dou et al.'s 19
+  categories, `self_disclosure` scope. Frozen 2026-11-21; blind test set
+  precision 0.55, recall 0.75, kappa 0.59. Not re-validated in this study.
 - `study/line_bot.py` — LINE webhook. **Reply API only, never push**: no message
   quota is used, so the bot never speaks first and does not notify on idle close.
 

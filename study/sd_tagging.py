@@ -14,7 +14,7 @@ import json
 import os
 import re
 
-from .sd_detector import detect_self_disclosure
+from .sd_detector import detect_batch
 
 
 def text_hash(text):
@@ -51,15 +51,19 @@ def tag_session(user_name, session):
         data = json.load(f)
 
     labels = load_labels(user_name)
+    todo = {}  # hash -> user utterance; dict also drops exact duplicates
     for entry in data["docstore/data"].values():
         md = entry["__data__"]["metadata"]
         text = entry["__data__"]["text"]
         h = text_hash(text)
         if md.get("first_mentioned_session") != session or h in labels:
             continue
-        context, utterance = user_utterance(text, user_name)
-        result = detect_self_disclosure(utterance, context)
-        labels[h] = {"session": session, "utterance": utterance, **result}
+        todo[h] = user_utterance(text, user_name)[1]
+
+    # E033 input: the user's words alone, no chatbot context, 20 per call
+    hashes = list(todo)
+    for h, result in zip(hashes, detect_batch([todo[h] for h in hashes])):
+        labels[h] = {"session": session, "utterance": todo[h], **result}
 
     with open(_labels_path(user_name), "w", encoding="utf-8") as f:
         json.dump(labels, f, ensure_ascii=False, indent=2)
