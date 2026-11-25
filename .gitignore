@@ -1,0 +1,10 @@
+# participant data and secrets never go to git
+runs/*/memories/
+runs/*/bindings.json
+runs/*/.env
+runs/logs/
+runs/participants.json
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
