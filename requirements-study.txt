@@ -1,0 +1,4 @@
+# on top of lufy/requirements.txt
+flask>=3.0
+requests>=2.32
+pytest>=8
