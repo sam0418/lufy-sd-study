@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>3 questions about this chat</h1>
+<p>Write 3 questions about things <b>you told LUFY {{ bot }}</b> in this chat that you would like it to remember, and the answers.</p>
+<p class="muted">Example — Question: Where am I from? Answer: Malaysia.</p>
+{% if error %}<div class="error">{{ error }}</div>{% endif %}
+<form method="post">
+  {% for k in range(3) %}
+  <div class="card">
+    <label for="q{{ k }}">Question {{ k + 1 }}</label>
+    <input type="text" id="q{{ k }}" name="q{{ k }}" maxlength="2000" value="{{ form.get('q' ~ k, '') }}">
+    <label for="a{{ k }}">Answer {{ k + 1 }}</label>
+    <input type="text" id="a{{ k }}" name="a{{ k }}" maxlength="2000" value="{{ form.get('a' ~ k, '') }}">
+  </div>
+  {% endfor %}
+  <button class="btn" type="submit">Submit</button>
+</form>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>Hi {{ name }}!</h1>
+{% if notice == "saving" %}<div class="notice">LUFY {{ bot }} is still saving your last chat. Please try again in a few minutes.</div>
+{% elif notice %}<div class="error">Something went wrong ({{ notice }}). Please try again.</div>{% endif %}
+
+<div class="progress">
+  {% for b, n in done.items() %}<div><span class="muted">LUFY {{ b }}</span><br><b>{{ n }}</b> / {{ total }} chats</div>{% endfor %}
+</div>
+
+{% if step == "chat" %}
+<div class="card">
+  <p><b>Next: chat with LUFY {{ bot }}</b> for about {{ target }} minutes.</p>
+  <p class="muted">Talk about anything, for example your studies, student life, hobbies or plans. When you finish, you will write 3 short questions about what you told LUFY.</p>
+  <form method="post" action="{{ url_for('begin', token=token) }}" onsubmit="this.querySelector('button').disabled=true; this.querySelector('button').textContent='Starting…';">
+    <button class="btn" type="submit">Start chatting with LUFY {{ bot }}</button>
+  </form>
+</div>
+{% elif step == "wait" %}
+<div class="card">
+  <p><b>That's all for today. Thank you!</b></p>
+  <p>Please come back tomorrow (or later) to chat with LUFY {{ bot }} again. Use the same link.</p>
+</div>
+{% elif step == "done" %}
+<div class="card"><p><b>You have finished the study. Thank you very much!</b></p></div>
+{% endif %}
+<p class="muted">Keep this link private: it is your personal page.</p>
+{% endblock %}
