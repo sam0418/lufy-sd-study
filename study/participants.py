@@ -32,9 +32,13 @@ class Registry:
     def codes(self):
         with open(self.participants_file, "r", encoding="utf-8") as f:
             codes = json.load(f)
+        seen = {}
         for code, p in codes.items():
             if not NAME_RE.match(p.get("name", "")):
                 raise ValueError(f"{code}: name must be letters only, got {p.get('name')!r}")
+            if p["name"] in seen:  # the name is LUFY's memory folder key
+                raise ValueError(f"{code}: name {p['name']!r} already used by {seen[p['name']]}")
+            seen[p["name"]] = code
         return codes
 
     def _bindings(self):
