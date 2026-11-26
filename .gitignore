@@ -8,3 +8,7 @@ runs/participants.json
 __pycache__/
 *.pyc
 .pytest_cache/
+runs/portal/data/
+runs/portal/.env
+runs/questionnaire.json
+runs/logs/*.out

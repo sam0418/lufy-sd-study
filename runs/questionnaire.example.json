@@ -1,0 +1,8 @@
+{
+  "intro": "Please answer for each chatbot. There are no right or wrong answers.",
+  "per_bot": true,
+  "items": [],
+  "open": [
+    {"id": "comments", "text": "Anything else you would like to tell us about LUFY A or LUFY B?"}
+  ]
+}

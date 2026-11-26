@@ -2,7 +2,8 @@
 
 Private. Unpublished research — do not push to a public remote.
 
-Two LINE bots, one per condition, both running the original LUFY
+A website where each participant chats, at home, with two chatbots — "LUFY A"
+and "LUFY B" — one per condition, both running the original LUFY
 (Sumida, Inoue & Kawahara, D&D 2025):
 
 | Bot | Condition | Forgetting |
@@ -10,8 +11,14 @@ Two LINE bots, one per condition, both running the original LUFY
 | A   | `lufy`    | original `forget_mechanism_wisely` |
 | B   | `lufy_sd` | `forget_mechanism_sd_first`: self-disclosure memories are kept first; how many memories are kept and every survival probability are unchanged |
 
-The bot-to-condition mapping lives only in each bot's `.env`; participants see
-two bots, never a condition name. Swap the two `.env` files to change it.
+The bot-to-condition mapping lives only in each engine's `.env`; participants
+see two bots, never a condition name. Swap the two `.env` files to change it.
+
+```
+phone / laptop ──https──▶ portal :8000 (public via Tailscale Funnel)
+                             ├──▶ engine A :8001 (127.0.0.1 only, runs/A)
+                             └──▶ engine B :8002 (127.0.0.1 only, runs/B)
+```
 
 ## What changed vs. LUFY
 
@@ -32,42 +39,51 @@ compatibility fix) at commit `86af756`, unmodified. Everything else is new:
   character): `gpt-4o-2024-08-06`, user words only, 20 per call, Dou et al.'s 19
   categories, `self_disclosure` scope. Frozen 2026-11-21; blind test set
   precision 0.55, recall 0.75, kappa 0.59. Not re-validated in this study.
-- `study/line_bot.py` — LINE webhook. **Reply API only, never push**: no message
-  quota is used, so the bot never speaks first and does not notify on idle close.
+- `study/service.py`, `study/engine_server.py` — one condition as a local JSON
+  service: per-participant lock, end-of-session processing in one background
+  worker, idle sessions closed after 20 min, recovery after a restart, turn log.
+- `study/portal.py`, `study/schedule.py`, `study/templates/` — the website.
+- `study/line_bot.py` — the earlier LINE front end (reply API only). Kept, not used.
 
 ## Participant flow
 
-1. Add both bots as LINE friends. Send `join P01` to each.
-2. Send `start` → LUFY opens (session 1: asks for a self-introduction).
-3. Chat. After 30 min LUFY appends a reminder once; the session keeps going.
-4. Send `stop` → session saved. Post-processing (IPE, summary, SD tags,
-   forgetting) runs in the background; `start` is refused until it finishes.
-5. Sessions idle for 20 min are closed silently.
+Each participant gets a personal link (`python -m study.admin links`). The page
+always shows the one next step (rules in `study/schedule.py`):
 
-`stop`/`start` also accept 結束/開始 and ストップ/スタート.
+1. Chat with the participant's `first` bot for about 30 minutes. A timer shows
+   the time; at 30 minutes a banner says they can end, nothing is cut off.
+2. "End chat" → 3 question-answer pairs about what they told that bot (LUFY's
+   protocol). Required before anything else.
+3. Same day: the other bot, then its 3 pairs. Bots alternate, first bot first.
+4. At most one session per bot per day (Tokyo time), so 4 sessions per bot take
+   at least 4 days. Next day: same link.
+5. After 4 sessions with each bot: the questionnaire in `runs/questionnaire.json`
+   (if it has items), then done.
+
+A session idle for 20 minutes is closed by the engine; the portal notices on
+the next page load and asks for that session's pairs. A session ended with no
+messages does not count. While a bot is still processing the last session,
+starting the same bot again is refused with a "try again in a few minutes".
 
 ## Setup
 
 ```
 runs/
-  participants.json      # copy participants.example.json; names letters only
+  participants.json      # copy participants.example.json; names letters only, unique
+  questionnaire.json     # copy questionnaire.example.json; add items once decided
   logs/                  # bot_A.jsonl, bot_B.jsonl (every turn, with latency)
-  A/.env                 # copy A/.env.example
-  B/.env
+  A/.env  B/.env         # copy .env.example; OPENAI_API_KEY, CONDITION
+  portal/.env            # copy .env.example
+  portal/data/           # one JSON per participant: sessions, QA pairs, questionnaire
 ```
 
-1. LINE Developers: one provider, two Messaging API channels (e.g. "LUFY A",
-   "LUFY B"). Turn off auto-reply and greeting messages; turn on webhooks.
-2. Python 3.11: `pip install -r lufy/requirements.txt -r requirements-study.txt`.
-3. Run each bot from its own directory (memories go to `./memories`):
-
-   ```
-   cd runs/A && PYTHONPATH=../.. python -m study.line_bot
-   cd runs/B && PYTHONPATH=../.. python -m study.line_bot
-   ```
-4. Expose the ports, e.g. `cloudflared tunnel --url http://localhost:8001`
-   (and 8002), and set `https://<tunnel>/callback` as each channel's webhook URL.
-5. Progress: `python -m study.progress --logs runs/logs`.
+1. Python 3.11: `pip install -r lufy/requirements.txt -r requirements-study.txt`.
+2. `python -m study.admin links --base https://<mac>.<tailnet>.ts.net` gives every
+   participant a token and prints their links.
+3. `scripts/run_all.sh` starts both engines and the portal.
+4. `tailscale funnel --bg 8000` publishes the portal (only the portal).
+5. Keep the Mac awake (`caffeinate -dims &` or System Settings).
+6. Progress: `python -m study.progress --logs runs/logs`.
 
 Note: `lufy/roberta/inference_large.py` sets `CUDA_VISIBLE_DEVICES=4` (the
 authors' server). On a one-GPU machine that hides the GPU, so RoBERTa runs on
