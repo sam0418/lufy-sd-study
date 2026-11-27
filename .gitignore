@@ -12,3 +12,4 @@ runs/portal/data/
 runs/portal/.env
 runs/questionnaire.json
 runs/logs/*.out
+.venv/
